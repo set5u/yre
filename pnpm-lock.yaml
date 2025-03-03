@@ -31,6 +31,9 @@ devDependencies:
   '@prettier/plugin-pug':
     specifier: ^3.2.0
     version: 3.2.1(prettier@3.5.3)
+  '@types/wicg-file-system-access':
+    specifier: ^2023.10.5
+    version: 2023.10.5
   '@typescript-eslint/eslint-plugin':
     specifier: ^8.19.1
     version: 8.25.0(@typescript-eslint/parser@8.25.0)(eslint@9.21.0)(typescript@5.7.3)
@@ -1929,6 +1932,10 @@ packages:
 
   /@types/web-bluetooth@0.0.20:
     resolution: {integrity: sha512-g9gZnnXVq7gM7v3tJCWV/qw7w+KeOlSHAhgF9RytFyifW6AF61hdT2ucrYhPq9hLs5JIryeupHV3qGk95dH9ow==}
+    dev: true
+
+  /@types/wicg-file-system-access@2023.10.5:
+    resolution: {integrity: sha512-e9kZO9kCdLqT2h9Tw38oGv9UNzBBWaR1MzuAavxPcsV/7FJ3tWbU6RI3uB+yKIDPGLkGVbplS52ub0AcRLvrhA==}
     dev: true
 
   /@typescript-eslint/eslint-plugin@8.25.0(@typescript-eslint/parser@8.25.0)(eslint@9.21.0)(typescript@5.7.3):

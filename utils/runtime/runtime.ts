@@ -1,32 +1,51 @@
-import type { File } from "./file";
+import type { Handle } from "./file";
 
 export type Runtime = {
   str: Record<string, string>;
-  files: Record<string, File>;
+  files: Record<string, Handle>;
 };
 
-export const run = (el: HTMLDivElement, files: File[]) => {
+export const run = async (
+  el: HTMLDivElement,
+  files: Handle[],
+  cb?: (fase: number, step: number) => void,
+) => {
   const runtime: Runtime = { str: {}, files: {} };
   for (const f of files) {
     runtime.files[f.name] = f;
   }
-  (async () => {
-    for (const f of files) {
-      await init(runtime, f);
-    }
-  })();
+  let step = 0;
+  for (const f of files) {
+    await init(runtime, f);
+    cb?.(0, step++);
+  }
   return runtime;
 };
 
-const init = async (runtime: Runtime, file: File) => {
+const init = async (runtime: Runtime, file: Handle) => {
   const entry = await file.read("entry");
   if (!entry) {
     return;
   }
+  const str = (runtime.str = parse(entry));
+  if ("font" in str) {
+    const font = str["font"].replaceAll("\n", "").split(",");
+    for (const f of font) {
+      if (!f) {
+        continue;
+      }
+      const fo = str[f].replaceAll("\n", "").split(",");
+      for (const foi of fo) {
+        if (!foi) {
+          continue;
+        }
+        await new FontFace(f, `url(${foi})`).load();
+      }
+    }
+  }
 };
 
 export const parse = (buf: ArrayBuffer): Record<string, string> => {
-  // Bufferは、4byte=length,length-byte=key,4byte=length,length-byte=valueの繰り返し
   const dataView = new DataView(buf);
   const result: Record<string, string> = {};
   let offset = 0;

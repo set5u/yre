@@ -21,6 +21,7 @@
     "@nuxt/test-utils": "^3.15.1",
     "@nuxtjs/tailwindcss": "^6.12.2",
     "@prettier/plugin-pug": "^3.2.0",
+    "@types/wicg-file-system-access": "^2023.10.5",
     "@typescript-eslint/eslint-plugin": "^8.19.1",
     "@typescript-eslint/parser": "^8.19.1",
     "@vitejs/plugin-vue": "^5.2.1",
