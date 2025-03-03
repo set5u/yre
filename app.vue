@@ -30,10 +30,7 @@ const load = async () => {
     "entry",
     stringify({
       program: "",
-      font: "noto-sans,",
       load: "",
-      "noto-sans":
-        "https://fonts.gstatic.com/s/notosans/v38/o-0mIpQlx3QUlC5A4PNB6Ryti20_6n1iPHjcz6L1SoM-jCpoiyD9A-9a6VI.woff2,",
     }),
   );
   const runtime = await run(divRef.value!, [file]);

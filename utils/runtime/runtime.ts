@@ -1,8 +1,13 @@
 import type { Handle } from "./file";
 
 export type Runtime = {
-  str: Record<string, string>;
-  files: Record<string, Handle>;
+  res: Record<string, string>;
+  file: Record<string, Handle>;
+  buf: WebGLBuffer[];
+  str: string[];
+  tex: WebGLTexture[];
+  gl: WebGL2RenderingContext;
+  progs: Record<string, [WebGLProgram, ...WebGLUniformLocation[]]>;
 };
 
 export const run = async (
@@ -10,24 +15,38 @@ export const run = async (
   files: Handle[],
   cb?: (fase: number, step: number) => void,
 ) => {
-  const runtime: Runtime = { str: {}, files: {} };
+  const canvas = document.createElement("canvas");
+  const gl = canvas.getContext("webgl2");
+  if (!gl) {
+    throw "Webgl2 Not Supported";
+  }
+  el.appendChild(canvas);
+  const runtime: Runtime = {
+    res: {},
+    file: {},
+    buf: [],
+    str: [],
+    tex: [],
+    gl,
+    progs: {},
+  };
   for (const f of files) {
-    runtime.files[f.name] = f;
+    runtime.file[f.name] = f;
   }
   let step = 0;
   for (const f of files) {
     await init(runtime, f);
     cb?.(0, step++);
   }
-  const str = runtime.str;
+  const res = runtime.res;
 
-  if ("font" in str) {
-    const font = str["font"].replaceAll("\n", "").split(",");
+  if ("font" in res) {
+    const font = res["font"].replaceAll("\n", "").split(",");
     for (const f of font) {
       if (!f) {
         continue;
       }
-      const fo = str[f].replaceAll("\n", "").split(",");
+      const fo = res[f].replaceAll("\n", "").split(",");
       for (const foi of fo) {
         if (!foi) {
           continue;
@@ -36,11 +55,52 @@ export const run = async (
       }
     }
   }
-  if ("program" in str) {
-    const program = str["program"].replaceAll("\n", "").split(",");
+  if ("program" in res) {
+    const program = res["program"].replaceAll("\n", "").split(",");
     for (const p of program) {
       if (!p) {
         continue;
+      }
+      const base = res[p];
+      if (!base) {
+        continue;
+      }
+      const sep = base.replaceAll("\n", "").split(",");
+      const vsh = res[sep[0]];
+      const fsh = res[sep[1]];
+      const transMode = sep[2];
+      if (!(vsh && fsh)) {
+        continue;
+      }
+      const trans = sep.slice(3);
+      const vshH = gl.createShader(gl.VERTEX_SHADER);
+      if (!vshH) {
+        return;
+      }
+      gl.shaderSource(vshH, vsh);
+      gl.compileShader(vshH);
+      const fshH = gl.createShader(gl.FRAGMENT_SHADER);
+      if (!fshH) {
+        return;
+      }
+      gl.shaderSource(fshH, fsh);
+      gl.compileShader(fshH);
+      const prog = gl.createProgram();
+      gl.attachShader(prog, vshH);
+      gl.attachShader(prog, fshH);
+      if (trans.length) {
+        gl.transformFeedbackVaryings(
+          prog,
+          trans,
+          transMode === "sep" ? gl.SEPARATE_ATTRIBS : gl.INTERLEAVED_ATTRIBS,
+        );
+      }
+      gl.linkProgram(program);
+      const r = (runtime.progs[p] = [prog]);
+      let u: WebGLUniformLocation | null;
+      let i = 0;
+      while ((u = gl.getUniformLocation(prog, "tex" + i++))) {
+        r.push(u);
       }
     }
   }
@@ -52,12 +112,12 @@ const init = async (runtime: Runtime, file: Handle) => {
   if (!entry) {
     return;
   }
-  const str = parse(entry);
+  const res = parse(entry);
   const extend = (
-    "extend" in str ? str["extend"].replaceAll("\n", "").split(",") : []
+    "extend" in res ? res["extend"].replaceAll("\n", "").split(",") : []
   ).reduce((p, c) => ((p[c] = true), p), {} as Record<string, boolean>);
-  for (const k in str) {
-    runtime.str[k] = extend[k] ? runtime.str[k] + str[k] : str[k];
+  for (const k in res) {
+    runtime.res[k] = extend[k] ? runtime.res[k] + res[k] : res[k];
   }
 };
 
