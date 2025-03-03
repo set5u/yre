@@ -12,6 +12,7 @@ export type Runtime = {
   fb: WebGLFramebuffer;
   rb: WebGLRenderbuffer[];
   keys: string[];
+  arr: string[][];
   stop: () => void;
 };
 
@@ -38,6 +39,7 @@ export const run = async (
     fb: gl.createFramebuffer(),
     rb: [],
     keys: [],
+    arr: [],
     stop() {
       Object.values(this.progs).forEach((v) => gl.deleteProgram(v[0]));
       this.sh.forEach((v) => gl.deleteShader(v));
@@ -58,9 +60,10 @@ export const run = async (
   }
   const res = runtime.res;
   res["define"] = (runtime.keys = Object.keys(res)).reduce(
-    (p, c, i) => `${p}const int ${c} = ${i};\n`,
+    (p, c, i) => `${p}const int ${c} = ${~i};\n`,
     "",
   );
+  res["space"] = files.map((v) => v.name).reduce((p, c) => `${p}${c},`, "");
   await cb?.(1, 0, 1);
 
   if ("font" in res) {
@@ -162,7 +165,7 @@ const init = async (runtime: Runtime, file: Handle) => {
   const res = parse(entry);
   const extend = (
     "extend" in res ? res["extend"].replaceAll("\n", "").split(",") : []
-  ).reduce((p, c) => ((p[c] = true), p), {} as Record<string, boolean>);
+  ).reduce((p, c) => (c && (p[c] = true), p), {} as Record<string, boolean>);
   for (const k in res) {
     runtime.res[k] = extend[k] ? runtime.res[k] + res[k] : res[k];
   }
