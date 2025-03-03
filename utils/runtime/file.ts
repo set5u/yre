@@ -1,4 +1,5 @@
 export type File = {
-  read(path: string): Promise<ArrayBuffer>;
+  name: string;
+  read(path: string): Promise<ArrayBuffer | null>;
   write(path: string, data: ArrayBuffer): Promise<boolean>;
 };
