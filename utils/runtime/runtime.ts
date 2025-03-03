@@ -8,6 +8,11 @@ export type Runtime = {
   tex: WebGLTexture[];
   gl: WebGL2RenderingContext;
   progs: Record<string, [WebGLProgram, ...WebGLUniformLocation[]]>;
+  sh: WebGLShader[];
+  fb: WebGLFramebuffer;
+  rb: WebGLRenderbuffer[];
+  keys: string[];
+  stop: () => void;
 };
 
 export const run = async (
@@ -29,6 +34,18 @@ export const run = async (
     tex: [],
     gl,
     progs: {},
+    sh: [],
+    fb: gl.createFramebuffer(),
+    rb: [],
+    keys: [],
+    stop() {
+      Object.values(this.progs).forEach((v) => gl.deleteProgram(v[0]));
+      this.sh.forEach((v) => gl.deleteShader(v));
+      this.buf.forEach((v) => gl.deleteBuffer(v));
+      this.tex.forEach((v) => gl.deleteTexture(v));
+      this.rb.forEach((v) => gl.deleteRenderbuffer(v));
+      gl.deleteFramebuffer(this.fb);
+    },
   };
   for (const f of files) {
     runtime.file[f.name] = f;
@@ -39,7 +56,10 @@ export const run = async (
     cb?.(0, step++);
   }
   const res = runtime.res;
-
+  res["define"] = (runtime.keys = Object.keys(res)).reduce(
+    (p, c, i) => `${p}const int ${c} = ${i};\n`,
+    "",
+  );
   if ("font" in res) {
     const font = res["font"].replaceAll("\n", "").split(",");
     for (const f of font) {
@@ -66,8 +86,8 @@ export const run = async (
         continue;
       }
       const sep = base.replaceAll("\n", "").split(",");
-      const vsh = res[sep[0]];
-      const fsh = res[sep[1]];
+      const vsh = replaceSh(res[sep[0]], res);
+      const fsh = replaceSh(res[sep[1]], res);
       const transMode = sep[2];
       if (!(vsh && fsh)) {
         continue;
@@ -79,12 +99,21 @@ export const run = async (
       }
       gl.shaderSource(vshH, vsh);
       gl.compileShader(vshH);
+      const vshI = gl.getShaderInfoLog(vshH);
+      if (vshI) {
+        console.log(vshI);
+      }
       const fshH = gl.createShader(gl.FRAGMENT_SHADER);
       if (!fshH) {
         return;
       }
       gl.shaderSource(fshH, fsh);
       gl.compileShader(fshH);
+      const fshI = gl.getShaderInfoLog(fshH);
+      if (fshI) {
+        console.log(fshI);
+      }
+      runtime.sh.push(vshH, fshH);
       const prog = gl.createProgram();
       gl.attachShader(prog, vshH);
       gl.attachShader(prog, fshH);
@@ -96,6 +125,10 @@ export const run = async (
         );
       }
       gl.linkProgram(program);
+      const progI = gl.getProgramInfoLog(prog);
+      if (progI) {
+        console.log(progI);
+      }
       const r = (runtime.progs[p] = [prog]);
       let u: WebGLUniformLocation | null;
       let i = 0;
@@ -106,7 +139,12 @@ export const run = async (
   }
   return runtime;
 };
-
+const replaceSh = (sh: string, res: Record<string, string>) => {
+  while (sh.match(/%%(.*?)%%/g)) {
+    sh = sh.replaceAll(/%%(.*?)%%/g, (_, a) => res[a]);
+  }
+  return sh;
+};
 const init = async (runtime: Runtime, file: Handle) => {
   const entry = await file.read("entry");
   if (!entry) {
@@ -123,18 +161,17 @@ const init = async (runtime: Runtime, file: Handle) => {
 
 export const parse = (buf: ArrayBuffer): Record<string, string> => {
   const dataView = new DataView(buf);
+  const decoder = new TextDecoder();
   const result: Record<string, string> = {};
   let offset = 0;
   while (offset < buf.byteLength) {
     const keyLength = dataView.getUint32(offset, true);
     offset += 4;
-    const key = new TextDecoder().decode(new DataView(buf, offset, keyLength));
+    const key = decoder.decode(new DataView(buf, offset, keyLength));
     offset += keyLength;
     const valueLength = dataView.getUint32(offset, true);
     offset += 4;
-    const value = new TextDecoder().decode(
-      new DataView(buf, offset, valueLength),
-    );
+    const value = decoder.decode(new DataView(buf, offset, valueLength));
     offset += valueLength;
     result[key] = value;
   }
@@ -149,6 +186,7 @@ export const stringify = (record: Record<string, string>): ArrayBuffer => {
     Object.keys(record).length * 8;
   const buffer = new ArrayBuffer(totalLength);
   const dataView = new DataView(buffer);
+  const encoder = new TextEncoder();
   let offset = 0;
   for (const key in record) {
     const value = record[key];
@@ -156,11 +194,11 @@ export const stringify = (record: Record<string, string>): ArrayBuffer => {
     const valueLength = value.length;
     dataView.setUint32(offset, keyLength, true);
     offset += 4;
-    new TextEncoder().encodeInto(key, new Uint8Array(buffer, offset));
+    encoder.encodeInto(key, new Uint8Array(buffer, offset));
     offset += keyLength;
     dataView.setUint32(offset, valueLength, true);
     offset += 4;
-    new TextEncoder().encodeInto(value, new Uint8Array(buffer, offset));
+    encoder.encodeInto(value, new Uint8Array(buffer, offset));
     offset += valueLength;
   }
   return buffer;
