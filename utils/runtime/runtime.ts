@@ -19,15 +19,8 @@ export const run = async (
     await init(runtime, f);
     cb?.(0, step++);
   }
-  return runtime;
-};
+  const str = runtime.str;
 
-const init = async (runtime: Runtime, file: Handle) => {
-  const entry = await file.read("entry");
-  if (!entry) {
-    return;
-  }
-  const str = (runtime.str = parse(entry));
   if ("font" in str) {
     const font = str["font"].replaceAll("\n", "").split(",");
     for (const f of font) {
@@ -42,6 +35,29 @@ const init = async (runtime: Runtime, file: Handle) => {
         await new FontFace(f, `url(${foi})`).load();
       }
     }
+  }
+  if ("program" in str) {
+    const program = str["program"].replaceAll("\n", "").split(",");
+    for (const p of program) {
+      if (!p) {
+        continue;
+      }
+    }
+  }
+  return runtime;
+};
+
+const init = async (runtime: Runtime, file: Handle) => {
+  const entry = await file.read("entry");
+  if (!entry) {
+    return;
+  }
+  const str = parse(entry);
+  const extend = (
+    "extend" in str ? str["extend"].replaceAll("\n", "").split(",") : []
+  ).reduce((p, c) => ((p[c] = true), p), {} as Record<string, boolean>);
+  for (const k in str) {
+    runtime.str[k] = extend[k] ? runtime.str[k] + str[k] : str[k];
   }
 };
 
