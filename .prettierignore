@@ -1,0 +1,6 @@
+docs
+*.min.js
+*.min.css
+*.min.json
+src-tauri
+pnpm-lock.yaml
