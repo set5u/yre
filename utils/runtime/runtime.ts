@@ -18,7 +18,7 @@ export type Runtime = {
 export const run = async (
   el: HTMLDivElement,
   files: Handle[],
-  cb?: (fase: number, step: number) => void,
+  cb?: (fase: number, step: number, stepMax: number) => Promise<void>,
 ) => {
   const canvas = document.createElement("canvas");
   const gl = canvas.getContext("webgl2");
@@ -51,18 +51,24 @@ export const run = async (
     runtime.file[f.name] = f;
   }
   let step = 0;
+  let stepMax = files.length;
   for (const f of files) {
     await init(runtime, f);
-    cb?.(0, step++);
+    await cb?.(0, step++, stepMax);
   }
   const res = runtime.res;
   res["define"] = (runtime.keys = Object.keys(res)).reduce(
     (p, c, i) => `${p}const int ${c} = ${i};\n`,
     "",
   );
+  await cb?.(1, 0, 1);
+
   if ("font" in res) {
     const font = res["font"].replaceAll("\n", "").split(",");
+    step = 0;
+    stepMax = font.length;
     for (const f of font) {
+      await cb?.(2, step++, stepMax);
       if (!f) {
         continue;
       }
@@ -77,7 +83,10 @@ export const run = async (
   }
   if ("program" in res) {
     const program = res["program"].replaceAll("\n", "").split(",");
+    step = 0;
+    stepMax = program.length;
     for (const p of program) {
+      await cb?.(3, step++, stepMax);
       if (!p) {
         continue;
       }
