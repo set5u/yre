@@ -108,19 +108,23 @@ const draw = (
     }
   } else {
     gl.bindBuffer(gl.ARRAY_BUFFER, rt.buf[decoded.buf.single - 1] || null);
-    const size = decoded.buf.buf.reduce((p, c) => Math.max(p, c), -4) + 4;
+    const size = decoded.buf.sizeOff.reduce(
+      (p, c, i) =>
+        i % 2 ? Math.max(p, c + decoded.buf.sizeOff[i - 1] * 4) : p,
+      0,
+    );
     for (let i = 0; i < 4; i++) {
-      if (!decoded.buf.buf[i]) {
+      if (!decoded.buf.sizeOff[i * 2]) {
         continue;
       }
       gl.enableVertexAttribArray(i);
       gl.vertexAttribPointer(
         i,
-        4,
+        decoded.buf.sizeOff[i * 2],
         gl.FLOAT,
         false,
         size,
-        decoded.buf.buf[i] - 1,
+        decoded.buf.sizeOff[i * 2 + 1] - 1,
       );
     }
   }
@@ -180,9 +184,19 @@ const decode = (cmd: Int32Array) => {
     single: cmd[0],
     buf: [
       (cmd[1] & 0xffffff00) >> 8,
-      ((cmd[1] & 0x000000ff) >> -16) | ((cmd[2] & 0xffff0000) >> 8),
+      ((cmd[1] & 0x000000ff) >> -16) | ((cmd[2] & 0xffff0000) >> 16),
       ((cmd[2] & 0x0000ffff) >> -8) | ((cmd[3] & 0xff000000) >> 24),
       cmd[3] & 0x00ffffff,
+    ],
+    sizeOff: [
+      (cmd[1] & 0xfff00000) >> 20,
+      (cmd[1] & 0x000fff00) >> 8,
+      ((cmd[1] & 0x000000ff) >> -4) | ((cmd[2] & 0xf0000000) >> 16),
+      (cmd[2] & 0x0fff0000) >> 16,
+      (cmd[2] & 0x0000fff0) >> 4,
+      ((cmd[2] & 0x0000000f) >> -8) | ((cmd[3] & 0xff000000) >> 24),
+      (cmd[3] & 0x00fff000) >> 12,
+      cmd[3] & 0x00000fff,
     ],
   };
   const tr = cmd.slice(4, 8);
