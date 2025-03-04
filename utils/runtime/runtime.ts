@@ -12,13 +12,17 @@ export type Runtime = {
   fb: WebGLFramebuffer;
   rb: WebGLRenderbuffer[];
   keys: string[];
-  arr: string[][];
   stop: () => void;
+  cpu: Uint8Array;
+  num: Record<string, number>;
 };
+
+export type CMD = (rt: Runtime, cmd: Int32Array) => void | Promise<void>;
 
 export const run = async (
   el: HTMLDivElement,
   files: Handle[],
+  cmd: CMD,
   cb?: (fase: number, step: number, stepMax: number) => Promise<void>,
 ) => {
   const canvas = document.createElement("canvas");
@@ -39,7 +43,6 @@ export const run = async (
     fb: gl.createFramebuffer(),
     rb: [],
     keys: [],
-    arr: [],
     stop() {
       Object.values(this.progs).forEach((v) => gl.deleteProgram(v[0]));
       this.sh.forEach((v) => gl.deleteShader(v));
@@ -48,6 +51,8 @@ export const run = async (
       this.rb.forEach((v) => gl.deleteRenderbuffer(v));
       gl.deleteFramebuffer(this.fb);
     },
+    cpu: new Uint8Array(2048 * 2048 * 4),
+    num: {},
   };
   for (const f of files) {
     runtime.file[f.name] = f;
@@ -59,40 +64,47 @@ export const run = async (
     await cb?.(0, step++, stepMax);
   }
   const res = runtime.res;
-  res["define"] = (runtime.keys = Object.keys(res)).reduce(
-    (p, c, i) => `${p}const int ${c} = ${~i};\n`,
-    "",
-  );
+
   res["space"] = files.map((v) => v.name).reduce((p, c) => `${p}${c},`, "");
+  res["define"] = "";
+  res["define"] = (runtime.keys = Object.keys(res).concat(
+    "program" in res
+      ? res["program"]
+          .replaceAll("\n", "")
+          .split(",")
+          .filter((v) => v)
+      : [],
+  )).reduce((p, c, i) => `${p}const int ${c} = ${~i};\n`, "");
+  runtime.keys.forEach((v, i) => (runtime.num[v] = i));
   await cb?.(1, 0, 1);
 
   if ("font" in res) {
-    const font = res["font"].replaceAll("\n", "").split(",");
+    const font = res["font"]
+      .replaceAll("\n", "")
+      .split(",")
+      .filter((v) => v);
     step = 0;
     stepMax = font.length;
     for (const f of font) {
       await cb?.(2, step++, stepMax);
-      if (!f) {
-        continue;
-      }
-      const fo = res[f].replaceAll("\n", "").split(",");
+      const fo = res[f]
+        .replaceAll("\n", "")
+        .split(",")
+        .filter((v) => v);
       for (const foi of fo) {
-        if (!foi) {
-          continue;
-        }
         await new FontFace(f, `url(${foi})`).load();
       }
     }
   }
   if ("program" in res) {
-    const program = res["program"].replaceAll("\n", "").split(",");
+    const program = res["program"]
+      .replaceAll("\n", "")
+      .split(",")
+      .filter((v) => v);
     step = 0;
     stepMax = program.length;
     for (const p of program) {
       await cb?.(3, step++, stepMax);
-      if (!p) {
-        continue;
-      }
       const base = res[p];
       if (!base) {
         continue;
@@ -149,8 +161,48 @@ export const run = async (
       }
     }
   }
+  const cpuTex = gl.createTexture();
+  runtime.tex.push(cpuTex);
+  gl.bindTexture(gl.TEXTURE_2D, cpuTex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texImage2D(
+    gl.TEXTURE_2D,
+    0,
+    gl.RGBA,
+    2048,
+    2048,
+    0,
+    gl.RGBA,
+    gl.UNSIGNED_BYTE,
+    runtime.cpu,
+  );
+  await cb?.(4, 0, 1);
+  if ("load" in res) {
+    const main = res["load"]
+      .replace("\n", "")
+      .split(",")
+      .filter((v) => v);
+    step = 0;
+    stepMax = main.length;
+    for (const m of main) {
+      await cb?.(5, step++, stepMax);
+      const ci = m.indexOf(":");
+      const space = m.substring(0, ci);
+      const path = m.substring(ci + 1);
+      const buf = await runtime.file[space]?.read(path);
+      if (!buf) {
+        continue;
+      }
+      const cmdd = new Int32Array(buf);
+      await cmd(runtime, cmdd);
+    }
+  }
   return runtime;
 };
+
 const replaceSh = (sh: string, res: Record<string, string>) => {
   while (sh.match(/%%(.*?)%%/g)) {
     sh = sh.replaceAll(/%%(.*?)%%/g, (_, a) => res[a]);

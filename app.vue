@@ -7,6 +7,7 @@ button.border(v-if="!loaded", @click="load") LOAD
 import { computed, onUnmounted, ref } from "vue";
 import { run, stringify } from "./utils/runtime/runtime";
 import { fromDirectoryHandle } from "./utils/runtime/file";
+import { cmd } from "./utils/runtime/cmd";
 
 const height = ref(0);
 const onResize = () => {
@@ -30,10 +31,10 @@ const load = async () => {
     "entry",
     stringify({
       program: "",
-      load: "",
+      load: "main,",
     }),
   );
-  const runtime = await run(divRef.value!, [file]);
+  const runtime = await run(divRef.value!, [file], cmd);
   console.log(runtime);
 };
 </script>
