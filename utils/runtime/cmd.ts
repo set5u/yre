@@ -12,6 +12,15 @@ const bindF = (rt: Runtime, decoded: ReturnType<typeof decode>) => {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     return;
   }
+  if (
+    decoded.tex[11] === 0 &&
+    decoded.tex[12] === 0 &&
+    decoded.tex[13] === 0 &&
+    decoded.tex[14] === 0 &&
+    decoded.tex[15] === 0
+  ) {
+    gl.enable(gl.RASTERIZER_DISCARD);
+  }
   const rb = rt.rb[decoded.tex[15] - 1] || null;
   gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb);
   gl.bindRenderbuffer(gl.RENDERBUFFER, rb);
@@ -115,7 +124,14 @@ const draw = (
       );
     }
   }
+  i = 0;
+  for (const tr of decoded.tr) {
+    gl.bindBufferBase(gl.TRANSFORM_FEEDBACK_BUFFER, i, rt.buf[tr - 1] || null);
+    i++;
+  }
+  gl.beginTransformFeedback(method);
   gl.drawArrays(method, 0, decoded.vert);
+  gl.endTransformFeedback();
 };
 
 const ops: CMD[] = [
@@ -127,12 +143,17 @@ const ops: CMD[] = [
     const gl = rt.gl;
     bindF(rt, decoded);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.disable(gl.RASTERIZER_DISCARD);
   },
   async (rt, cmd) => {
+    const gl = rt.gl;
     draw(rt, cmd, rt.gl.POINTS);
+    gl.disable(gl.RASTERIZER_DISCARD);
   },
   async (rt, cmd) => {
+    const gl = rt.gl;
     draw(rt, cmd, rt.gl.TRIANGLES);
+    gl.disable(gl.RASTERIZER_DISCARD);
   },
   async (rt, cmd) => {},
   async (rt, cmd) => {},
