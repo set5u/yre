@@ -88,7 +88,7 @@ const draw = (
       i++;
     }
   } else {
-    gl.bindBuffer(gl.ARRAY_BUFFER, rt.buf[decoded.buf.single] || null);
+    gl.bindBuffer(gl.ARRAY_BUFFER, rt.buf[decoded.buf.single - 1] || null);
     const size = decoded.buf.buf.reduce((p, c) => Math.max(p, c), -4) + 4;
     for (let i = 0; i < 4; i++) {
       if (!decoded.buf.buf[i]) {
