@@ -2,6 +2,16 @@ import type { CMD, Runtime } from "./runtime";
 
 const bindF = (rt: Runtime, decoded: ReturnType<typeof decode>) => {
   const gl = rt.gl;
+  if (
+    decoded.tex[11] === 1 &&
+    decoded.tex[12] === 0 &&
+    decoded.tex[13] === 0 &&
+    decoded.tex[14] === 0 &&
+    decoded.tex[15] === 0
+  ) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    return;
+  }
   const rb = rt.rb[decoded.tex[15] - 1] || null;
   gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb);
   gl.bindRenderbuffer(gl.RENDERBUFFER, rb);
