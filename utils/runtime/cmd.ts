@@ -64,7 +64,48 @@ const draw = (
     | typeof WebGL2RenderingContext.POINTS,
 ) => {
   const decoded = decode(cmd);
+
+  const prog = rt.prog[rt.key[decoded.sh]];
+  if (!prog) {
+    return;
+  }
   bindF(rt, decoded);
+  const gl = rt.gl;
+  gl.useProgram(prog[0]);
+  let i = 0;
+  for (const ti of decoded.tex.slice(0, 11)) {
+    gl.bindTexture(gl.TEXTURE_2D, rt.tex[ti - 1] || null);
+    gl.activeTexture(gl.TEXTURE0 + i);
+    gl.uniform1i(prog[i + 1], i);
+    i++;
+  }
+  if (decoded.buf.sep) {
+    let i = 0;
+    for (const b of decoded.buf.buf) {
+      gl.bindBuffer(gl.ARRAY_BUFFER, rt.buf[b - 1] || null);
+      gl.enableVertexAttribArray(i);
+      gl.vertexAttribPointer(i, 4, gl.FLOAT, false, 0, 0);
+      i++;
+    }
+  } else {
+    gl.bindBuffer(gl.ARRAY_BUFFER, rt.buf[decoded.buf.single] || null);
+    const size = decoded.buf.buf.reduce((p, c) => Math.max(p, c), -4) + 4;
+    for (let i = 0; i < 4; i++) {
+      if (!decoded.buf.buf[i]) {
+        continue;
+      }
+      gl.enableVertexAttribArray(i);
+      gl.vertexAttribPointer(
+        i,
+        4,
+        gl.FLOAT,
+        false,
+        size,
+        decoded.buf.buf[i] - 1,
+      );
+    }
+  }
+  gl.drawArrays(method, 0, decoded.vert);
 };
 
 const ops: CMD[] = [
@@ -105,42 +146,8 @@ export const cmd: CMD = async (rt, cmd) => {
 const decode = (cmd: Int32Array) => {
   const buf = {
     sep: cmd[0] === 0,
-    locOff: [
-      (cmd[1] & 0b11000000000000000000000000000000) >> 30,
-      (cmd[1] & 0b00111100000000000000000000000000) >> 26,
-      (cmd[1] & 0b00000011000000000000000000000000) >> 24,
-      (cmd[1] & 0b00000000111100000000000000000000) >> 20,
-      (cmd[1] & 0b00000000000011000000000000000000) >> 18,
-      (cmd[1] & 0b00000000000000111100000000000000) >> 14,
-      (cmd[1] & 0b00000000000000000011000000000000) >> 12,
-      (cmd[1] & 0b00000000000000000000111100000000) >> 8,
-      (cmd[1] & 0b00000000000000000000000011000000) >> 6,
-      (cmd[1] & 0b00000000000000000000000000111100) >> 2,
-      (cmd[1] & 0b00000000000000000000000000000011) >> 0,
-      (cmd[2] & 0b11110000000000000000000000000000) >> 28,
-      (cmd[2] & 0b00001100000000000000000000000000) >> 26,
-      (cmd[2] & 0b00000011110000000000000000000000) >> 22,
-      (cmd[2] & 0b00000000001100000000000000000000) >> 20,
-      (cmd[2] & 0b00000000000011110000000000000000) >> 16,
-      (cmd[2] & 0b00000000000000001100000000000000) >> 14,
-      (cmd[2] & 0b00000000000000000011110000000000) >> 10,
-      (cmd[2] & 0b00000000000000000000001100000000) >> 8,
-      (cmd[2] & 0b00000000000000000000000011110000) >> 4,
-      (cmd[2] & 0b00000000000000000000000000001100) >> 2,
-      ((cmd[2] & 0b00000000000000000000000000000011) >> -2) |
-        ((cmd[3] & 0b11000000000000000000000000000000) >> 30),
-      (cmd[3] & 0b00110000000000000000000000000000) >> 28,
-      (cmd[3] & 0b00001111000000000000000000000000) >> 24,
-      (cmd[3] & 0b00000000110000000000000000000000) >> 22,
-      (cmd[3] & 0b00000000001111000000000000000000) >> 18,
-      (cmd[3] & 0b00000000000000110000000000000000) >> 16,
-      (cmd[3] & 0b00000000000000001111000000000000) >> 12,
-      (cmd[3] & 0b00000000000000000000110000000000) >> 10,
-      (cmd[3] & 0b00000000000000000000001111000000) >> 6,
-      (cmd[3] & 0b00000000000000000000000000110000) >> 4,
-      (cmd[3] & 0b00000000000000000000000000001111) >> 0,
-    ],
-    bufs: [
+    single: cmd[0],
+    buf: [
       (cmd[1] & 0xffffff00) >> 8,
       ((cmd[1] & 0x000000ff) >> -16) | ((cmd[2] & 0xffff0000) >> 8),
       ((cmd[2] & 0x0000ffff) >> -8) | ((cmd[3] & 0xff000000) >> 24),

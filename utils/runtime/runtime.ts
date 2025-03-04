@@ -21,7 +21,7 @@ export type CMD = (rt: Runtime, cmd: Int32Array) => void | Promise<void>;
 
 export const run = async (
   el: HTMLDivElement,
-  files: Handle[],
+  file: Handle[],
   cmd: CMD,
   cb?: (fase: number, step: number, stepMax: number) => Promise<void>,
 ) => {
@@ -63,18 +63,18 @@ export const run = async (
     cpu: new Uint8Array(2048 * 2048 * 4),
     num: {},
   };
-  for (const f of files) {
+  for (const f of file) {
     runtime.file[f.name] = f;
   }
   let step = 0;
-  let stepMax = files.length;
-  for (const f of files) {
+  let stepMax = file.length;
+  for (const f of file) {
     await init(runtime, f);
     await cb?.(0, step++, stepMax);
   }
   const res = runtime.res;
 
-  res["space"] = files.map((v) => v.name).reduce((p, c) => `${p}${c},`, "");
+  res["space"] = file.map((v) => v.name).reduce((p, c) => `${p}${c},`, "");
   res["define"] = "";
   res["define"] = (runtime.key = Object.keys(res).concat(
     "program" in res
