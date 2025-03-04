@@ -7,11 +7,11 @@ export type Runtime = {
   str: string[];
   tex: WebGLTexture[];
   gl: WebGL2RenderingContext;
-  progs: Record<string, [WebGLProgram, ...WebGLUniformLocation[]]>;
+  prog: Record<string, [WebGLProgram, ...WebGLUniformLocation[]]>;
   sh: WebGLShader[];
   fb: WebGLFramebuffer;
   rb: WebGLRenderbuffer[];
-  keys: string[];
+  key: string[];
   stop: () => void;
   cpu: Uint8Array;
   num: Record<string, number>;
@@ -26,6 +26,14 @@ export const run = async (
   cb?: (fase: number, step: number, stepMax: number) => Promise<void>,
 ) => {
   const canvas = document.createElement("canvas");
+  canvas.style = "position:absolute;width:100%;height:100%;";
+  const onResize = () => {
+    canvas.width = el.clientWidth;
+    canvas.height = el.clientHeight;
+  };
+  const observer = new ResizeObserver(onResize);
+  observer.observe(el);
+  onResize();
   const gl = canvas.getContext("webgl2");
   if (!gl) {
     throw "Webgl2 Not Supported";
@@ -38,18 +46,19 @@ export const run = async (
     str: [],
     tex: [],
     gl,
-    progs: {},
+    prog: {},
     sh: [],
     fb: gl.createFramebuffer(),
     rb: [],
-    keys: [],
+    key: [],
     stop() {
-      Object.values(this.progs).forEach((v) => gl.deleteProgram(v[0]));
+      Object.values(this.prog).forEach((v) => gl.deleteProgram(v[0]));
       this.sh.forEach((v) => gl.deleteShader(v));
       this.buf.forEach((v) => gl.deleteBuffer(v));
       this.tex.forEach((v) => gl.deleteTexture(v));
       this.rb.forEach((v) => gl.deleteRenderbuffer(v));
       gl.deleteFramebuffer(this.fb);
+      observer.disconnect();
     },
     cpu: new Uint8Array(2048 * 2048 * 4),
     num: {},
@@ -67,7 +76,7 @@ export const run = async (
 
   res["space"] = files.map((v) => v.name).reduce((p, c) => `${p}${c},`, "");
   res["define"] = "";
-  res["define"] = (runtime.keys = Object.keys(res).concat(
+  res["define"] = (runtime.key = Object.keys(res).concat(
     "program" in res
       ? res["program"]
           .replaceAll("\n", "")
@@ -75,7 +84,7 @@ export const run = async (
           .filter((v) => v)
       : [],
   )).reduce((p, c, i) => `${p}const int ${c} = ${~i};\n`, "");
-  runtime.keys.forEach((v, i) => (runtime.num[v] = i));
+  runtime.key.forEach((v, i) => (runtime.num[v] = i));
   await cb?.(1, 0, 1);
 
   if ("font" in res) {
@@ -153,7 +162,7 @@ export const run = async (
       if (progI) {
         console.log(progI);
       }
-      const r = (runtime.progs[p] = [prog]);
+      const r = (runtime.prog[p] = [prog]);
       let u: WebGLUniformLocation | null;
       let i = 0;
       while ((u = gl.getUniformLocation(prog, "tex" + i++))) {

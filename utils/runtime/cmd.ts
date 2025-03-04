@@ -56,6 +56,17 @@ const bindF = (rt: Runtime, decoded: ReturnType<typeof decode>) => {
   ]);
 };
 
+const draw = (
+  rt: Runtime,
+  cmd: Int32Array,
+  method:
+    | typeof WebGL2RenderingContext.TRIANGLES
+    | typeof WebGL2RenderingContext.POINTS,
+) => {
+  const decoded = decode(cmd);
+  bindF(rt, decoded);
+};
+
 const ops: CMD[] = [
   async (rt, cmd) => {
     await utils[cmd[0]]?.(rt, cmd);
@@ -66,8 +77,12 @@ const ops: CMD[] = [
     bindF(rt, decoded);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   },
-  async (rt, cmd) => {},
-  async (rt, cmd) => {},
+  async (rt, cmd) => {
+    draw(rt, cmd, rt.gl.POINTS);
+  },
+  async (rt, cmd) => {
+    draw(rt, cmd, rt.gl.TRIANGLES);
+  },
   async (rt, cmd) => {},
   async (rt, cmd) => {},
   async (rt, cmd) => {},
