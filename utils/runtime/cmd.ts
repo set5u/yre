@@ -110,7 +110,7 @@ const draw = (
     gl.bindBuffer(gl.ARRAY_BUFFER, rt.buf[decoded.buf.single - 1] || null);
     const size = decoded.buf.sizeOff.reduce(
       (p, c, i) =>
-        i % 2 ? Math.max(p, c + decoded.buf.sizeOff[i - 1] * 4) : p,
+        i % 2 ? Math.max(p, c * 4 + decoded.buf.sizeOff[i - 1] * 4) : p,
       0,
     );
     for (let i = 0; i < 4; i++) {
@@ -124,7 +124,7 @@ const draw = (
         gl.FLOAT,
         false,
         size,
-        decoded.buf.sizeOff[i * 2 + 1] - 1,
+        decoded.buf.sizeOff[i * 2 + 1] * 4,
       );
     }
   }
@@ -151,12 +151,12 @@ const ops: CMD[] = [
   },
   async (rt, cmd) => {
     const gl = rt.gl;
-    draw(rt, cmd, rt.gl.POINTS);
+    draw(rt, cmd, gl.POINTS);
     gl.disable(gl.RASTERIZER_DISCARD);
   },
   async (rt, cmd) => {
     const gl = rt.gl;
-    draw(rt, cmd, rt.gl.TRIANGLES);
+    draw(rt, cmd, gl.TRIANGLES);
     gl.disable(gl.RASTERIZER_DISCARD);
   },
   async (rt, cmd) => {},
