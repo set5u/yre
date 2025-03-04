@@ -7,7 +7,10 @@ export type Runtime = {
   str: string[];
   tex: WebGLTexture[];
   gl: WebGL2RenderingContext;
-  prog: Record<string, [WebGLProgram, ...WebGLUniformLocation[]]>;
+  prog: Record<
+    string,
+    [WebGLProgram, WebGLTransformFeedback, ...WebGLUniformLocation[]]
+  >;
   sh: WebGLShader[];
   fb: WebGLFramebuffer;
   rb: WebGLRenderbuffer[];
@@ -57,6 +60,12 @@ export const run = async (
       this.buf.forEach((v) => gl.deleteBuffer(v));
       this.tex.forEach((v) => gl.deleteTexture(v));
       this.rb.forEach((v) => gl.deleteRenderbuffer(v));
+      Object.keys(this.prog).forEach(
+        (k) => (
+          gl.deleteProgram(this.prog[k][0]),
+          gl.deleteTransformFeedback(this.prog[k][1])
+        ),
+      );
       gl.deleteFramebuffer(this.fb);
       observer.disconnect();
     },
@@ -150,6 +159,8 @@ export const run = async (
       const prog = gl.createProgram();
       gl.attachShader(prog, vshH);
       gl.attachShader(prog, fshH);
+      const tr = gl.createTransformFeedback();
+      gl.bindTransformFeedback(gl.TRANSFORM_FEEDBACK, tr);
       if (trans.length) {
         gl.transformFeedbackVaryings(
           prog,
@@ -162,7 +173,7 @@ export const run = async (
       if (progI) {
         console.log(progI);
       }
-      const r = (runtime.prog[p] = [prog]);
+      const r = (runtime.prog[p] = [prog, tr]);
       let u: WebGLUniformLocation | null;
       let i = 0;
       while ((u = gl.getUniformLocation(prog, "tex" + i++))) {

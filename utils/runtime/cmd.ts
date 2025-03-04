@@ -91,6 +91,7 @@ const draw = (
   bindF(rt, decoded);
   const gl = rt.gl;
   gl.useProgram(prog[0]);
+  gl.bindTransformFeedback(gl.TRANSFORM_FEEDBACK, prog[1]);
   let i = 0;
   for (const ti of decoded.tex.slice(0, 11)) {
     gl.bindTexture(gl.TEXTURE_2D, rt.tex[ti - 1] || null);
