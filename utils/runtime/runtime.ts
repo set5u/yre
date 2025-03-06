@@ -29,7 +29,9 @@ export const run = async (
   cb?: (fase: number, step: number, stepMax: number) => Promise<void>,
 ) => {
   const canvas = document.createElement("canvas");
-  canvas.style = "position:absolute;width:100%;height:100%;";
+  canvas.style.position = "absolute";
+  canvas.style.width = "100%";
+  canvas.style.height = "100%";
   const onResize = () => {
     canvas.width = el.clientWidth;
     canvas.height = el.clientHeight;

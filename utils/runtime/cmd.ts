@@ -160,9 +160,119 @@ const ops: CMD[] = [
     draw(rt, cmd, gl.TRIANGLES);
     gl.disable(gl.RASTERIZER_DISCARD);
   },
-  async (rt, cmd) => {},
-  async (rt, cmd) => {},
-  async (rt, cmd) => {},
+  async (rt, cmd) => {
+    const gl = rt.gl;
+    if (cmd[0] < 0) {
+      gl.deleteBuffer(rt.buf[~cmd[0]] || null);
+      delete rt.buf[~cmd[0]];
+      return;
+    }
+    if (rt.buf[cmd[0] - 1]) {
+      gl.deleteBuffer(rt.buf[cmd[0] - 1]);
+    }
+    const buf = (rt.buf[cmd[0] - 1] = gl.createBuffer());
+    const m = rt.res[rt.key[~cmd[1]]] || null;
+    if (!m) {
+      ops[7](
+        rt,
+        new Int32Array([cmd[2], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+      );
+      return;
+    }
+
+    const ci = m.indexOf(":");
+    const space = m.substring(0, ci);
+    const path = m.substring(ci + 1);
+    const data = await rt.file[space].read(path);
+    if (!data) {
+      ops[7](
+        rt,
+        new Int32Array([cmd[2], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+      );
+      return;
+    }
+    if (rt.tex[cmd[0] - 1] !== buf) {
+      return;
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_COPY);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    ops[7](
+      rt,
+      new Int32Array([cmd[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+    );
+  },
+  async (rt, cmd) => {
+    const gl = rt.gl;
+    if (cmd[0] < 0) {
+      gl.deleteTexture(rt.tex[~cmd[0]] || null);
+      delete rt.tex[~cmd[0]];
+      return;
+    }
+    if (rt.tex[cmd[0] - 1]) {
+      gl.deleteTexture(rt.tex[cmd[0] - 1]);
+    }
+    const tex = (rt.tex[cmd[0] - 1] = gl.createTexture());
+    const m = rt.res[rt.key[~cmd[1]]] || null;
+    if (!m) {
+      ops[7](
+        rt,
+        new Int32Array([cmd[2], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+      );
+      return;
+    }
+
+    const ci = m.indexOf(":");
+    const space = m.substring(0, ci);
+    const path = m.substring(ci + 1);
+    const data = await rt.file[space].read(path);
+    if (!data) {
+      ops[7](
+        rt,
+        new Int32Array([cmd[2], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+      );
+      return;
+    }
+    const url = URL.createObjectURL(new Blob([data]));
+    const img = document.createElement("img");
+    img.onload = () => {
+      if (rt.tex[cmd[0] - 1] !== tex) {
+        return;
+      }
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+      gl.generateMipmap(gl.TEXTURE_2D);
+      ops[7](
+        rt,
+        new Int32Array([cmd[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+      );
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  },
+  async (rt, cmd) => {
+    const gl = rt.gl;
+    if (cmd[0] < 0) {
+      gl.deleteRenderbuffer(rt.rb[~cmd[0]] || null);
+      delete rt.rb[~cmd[0]];
+      return;
+    }
+    if (rt.rb[cmd[0] - 1]) {
+      gl.deleteRenderbuffer(rt.rb[cmd[0] - 1]);
+    }
+    const buf = (rt.rb[cmd[0] - 1] = gl.createRenderbuffer());
+    gl.bindRenderbuffer(gl.RENDERBUFFER, buf);
+    gl.renderbufferStorage(
+      gl.RENDERBUFFER,
+      gl.DEPTH_COMPONENT16,
+      cmd[1],
+      cmd[2],
+    );
+    ops[7](
+      rt,
+      new Int32Array([cmd[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+    );
+  },
   async (rt, cmd) => {},
 ];
 
