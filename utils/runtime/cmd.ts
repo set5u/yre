@@ -273,7 +273,46 @@ const ops: CMD[] = [
       new Int32Array([cmd[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
     );
   },
-  async (rt, cmd) => {},
+  async (rt, cmda) => {
+    const gl = rt.gl;
+    const ars: Int32Array[] = [];
+    for (let i = 0; i < 8; i++) {
+      const a = cmda[i * 2];
+      const l = cmda[i * 2 + 1];
+      const buf = new ArrayBuffer(l * 4);
+      if (a < 0) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fb);
+        gl.framebufferTexture2D(
+          gl.FRAMEBUFFER,
+          gl.COLOR_ATTACHMENT0,
+          gl.TEXTURE_2D,
+          rt.tex[~a] || null,
+          0,
+        );
+
+        gl.readPixels(
+          0,
+          0,
+          Math.sqrt(l),
+          Math.sqrt(l),
+          gl.RGBA,
+          gl.UNSIGNED_BYTE,
+          new Uint8Array(buf),
+        );
+      } else {
+        gl.bindBuffer(gl.ARRAY_BUFFER, rt.buf[a - 1] || null);
+        gl.getBufferSubData(gl.ARRAY_BUFFER, 0, new Float32Array(buf));
+      }
+      ars.push(new Int32Array(buf));
+    }
+    const ret = new Int32Array(ars.reduce((p, v) => v.length + p, 0));
+    let o = 0;
+    for (const r of ars) {
+      ret.set(r, o);
+      o += r.length;
+    }
+    cmd(rt, ret);
+  },
 ];
 
 const utils: CMD[] = [
