@@ -323,8 +323,8 @@ const utils: CMD[] = [
 export const cmd: CMD = async (rt, cmd) => {
   const l = cmd.length / 16;
   for (let i = 0; i < l; i++) {
-    const op = cmd[l * 16 + 15] & 0x7;
-    await ops[op](rt, cmd.slice(l * 16, l * 16 + 16));
+    const op = cmd[i * 16 + 15] & 0x7;
+    await ops[op](rt, cmd.slice(i * 16, i * 16 + 16));
   }
 };
 
@@ -341,7 +341,7 @@ const decode = (cmd: Int32Array) => {
     sizeOff: [
       (cmd[1] & 0xfff00000) >> 20,
       (cmd[1] & 0x000fff00) >> 8,
-      ((cmd[1] & 0x000000ff) >> -4) | ((cmd[2] & 0xf0000000) >> 16),
+      ((cmd[1] & 0x000000ff) >> -4) | ((cmd[2] & 0xf0000000) >> 28),
       (cmd[2] & 0x0fff0000) >> 16,
       (cmd[2] & 0x0000fff0) >> 4,
       ((cmd[2] & 0x0000000f) >> -8) | ((cmd[3] & 0xff000000) >> 24),
