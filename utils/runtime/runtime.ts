@@ -5,7 +5,7 @@ export type Runtime = {
   file: Record<string, Handle>;
   buf: WebGLBuffer[];
   str: string[];
-  tex: WebGLTexture[];
+  tex: [number, WebGLTexture][];
   gl: WebGL2RenderingContext;
   prog: Record<
     string,
@@ -184,7 +184,7 @@ export const run = async (
     }
   }
   const cpuTex = gl.createTexture();
-  runtime.tex.push(cpuTex);
+  runtime.tex.push([gl.TEXTURE_2D, cpuTex]);
   gl.bindTexture(gl.TEXTURE_2D, cpuTex);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);

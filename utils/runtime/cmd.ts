@@ -31,39 +31,39 @@ const bindF = (rt: Runtime, decoded: ReturnType<typeof decode>) => {
     rt.rb,
   );
   gl.bindRenderbuffer(gl.RENDERBUFFER, null);
-  const tex0 = rt.tex[decoded.tex[11] - 1] || null;
-  gl.bindTexture(gl.TEXTURE_2D, tex0);
+  const [tex0i, tex0] = rt.tex[decoded.tex[11] - 1] || null;
+  gl.bindTexture(tex0i, tex0);
   gl.framebufferTexture2D(
     gl.FRAMEBUFFER,
     gl.COLOR_ATTACHMENT0 + 0,
-    gl.TEXTURE_2D,
+    tex0i,
     tex0,
     0,
   );
-  const tex1 = rt.tex[decoded.tex[12] - 1] || null;
-  gl.bindTexture(gl.TEXTURE_2D, tex1);
+  const [tex1i, tex1] = rt.tex[decoded.tex[12] - 1] || null;
+  gl.bindTexture(tex1i, tex1);
   gl.framebufferTexture2D(
     gl.FRAMEBUFFER,
     gl.COLOR_ATTACHMENT0 + 1,
-    gl.TEXTURE_2D,
+    tex1i,
     tex1,
     0,
   );
-  const tex2 = rt.tex[decoded.tex[13] - 1] || null;
-  gl.bindTexture(gl.TEXTURE_2D, tex2);
+  const [tex2i, tex2] = rt.tex[decoded.tex[13] - 1] || null;
+  gl.bindTexture(tex2i, tex2);
   gl.framebufferTexture2D(
     gl.FRAMEBUFFER,
     gl.COLOR_ATTACHMENT0 + 2,
-    gl.TEXTURE_2D,
+    tex2i,
     tex2,
     0,
   );
-  const tex3 = rt.tex[decoded.tex[14] - 1] || null;
-  gl.bindTexture(gl.TEXTURE_2D, tex3);
+  const [tex3i, tex3] = rt.tex[decoded.tex[14] - 1] || null;
+  gl.bindTexture(tex3i, tex3);
   gl.framebufferTexture2D(
     gl.FRAMEBUFFER,
     gl.COLOR_ATTACHMENT0 + 3,
-    gl.TEXTURE_2D,
+    tex3i,
     tex3,
     0,
   );
@@ -212,12 +212,12 @@ const ops: CMD[] = [
     if (rt.tex[cmd[0] - 1]) {
       gl.deleteTexture(rt.tex[cmd[0] - 1]);
     }
-    const tex = (rt.tex[cmd[0] - 1] = gl.createTexture());
+    const [, tex] = (rt.tex[cmd[0] - 1] = [cmd[2], gl.createTexture()]);
     const m = rt.res[rt.key[~cmd[1]]] || null;
     if (!m) {
       ops[7](
         rt,
-        new Int32Array([cmd[2], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        new Int32Array([cmd[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
       );
       return;
     }
@@ -229,14 +229,14 @@ const ops: CMD[] = [
     if (!data) {
       ops[7](
         rt,
-        new Int32Array([cmd[2], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        new Int32Array([cmd[4], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
       );
       return;
     }
     const url = URL.createObjectURL(new Blob([data]));
     const img = document.createElement("img");
     img.onload = () => {
-      if (rt.tex[cmd[0] - 1] !== tex) {
+      if (rt.tex[cmd[0] - 1][1] !== tex) {
         return;
       }
       gl.bindTexture(gl.TEXTURE_2D, tex);
@@ -244,7 +244,7 @@ const ops: CMD[] = [
       gl.generateMipmap(gl.TEXTURE_2D);
       ops[7](
         rt,
-        new Int32Array([cmd[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        new Int32Array([cmd[5], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
       );
       URL.revokeObjectURL(url);
     };
