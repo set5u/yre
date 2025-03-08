@@ -75,6 +75,7 @@ export const run = async (
       );
       gl.deleteFramebuffer(this.fb);
       observer.disconnect();
+      el.removeChild(canvas);
     },
     upCpu() {
       this.cpu[0] = performance.now();

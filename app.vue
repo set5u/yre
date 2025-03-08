@@ -108,7 +108,7 @@ const load = async () => {
       load: "test:main=main,",
       main: "mainv,mainf,,p0,p1,p2,p3",
       mainv:
-        "#version 300 es\nflat out ivec4 p0;flat out ivec4 p1;flat out ivec4 p2;flat out ivec4 p3;void main(){p0=ivec4(0,1,2,3);p1=ivec4(0,1,2,3);p2=ivec4(0,1,2,3);p3=ivec4(0,1,2,3);gl_Position=vec4(0.,0.,0.,1.);}",
+        "#version 300 es\nflat out ivec4 p0;flat out ivec4 p1;flat out ivec4 p2;flat out ivec4 p3;void main(){p0=ivec4(0,0,0,0);p1=ivec4(0,0,0,0);p2=ivec4(0,0,0,0);p3=ivec4(0,0,0,0);gl_Position=vec4(0.,0.,0.,1.);}",
       mainf:
         "#version 300 es\nprecision highp float;out vec4 color;void main(){color=vec4(1.,0.,0.,1.);}",
     }),

@@ -191,7 +191,24 @@ const ops: CMD[] = [
       gl.bindBuffer(gl.ARRAY_BUFFER, null);
       ops[7](
         rt,
-        new Int32Array([cmd[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        new Int32Array([
+          cmd[3],
+          cmd[4],
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+        ]),
       );
       return;
     }
@@ -206,7 +223,24 @@ const ops: CMD[] = [
       gl.bindBuffer(gl.ARRAY_BUFFER, null);
       ops[7](
         rt,
-        new Int32Array([cmd[4], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        new Int32Array([
+          cmd[5],
+          cmd[6],
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+        ]),
       );
       return;
     }
@@ -218,7 +252,24 @@ const ops: CMD[] = [
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
     ops[7](
       rt,
-      new Int32Array([cmd[5], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+      new Int32Array([
+        cmd[7],
+        cmd[8],
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+      ]),
     );
   },
   async (rt, cmd) => {
@@ -248,7 +299,24 @@ const ops: CMD[] = [
       );
       ops[7](
         rt,
-        new Int32Array([cmd[5], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        new Int32Array([
+          cmd[5],
+          cmd[6],
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+        ]),
       );
       return;
     }
@@ -272,7 +340,24 @@ const ops: CMD[] = [
       );
       ops[7](
         rt,
-        new Int32Array([cmd[6], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        new Int32Array([
+          cmd[7],
+          cmd[8],
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+        ]),
       );
       return;
     }
@@ -287,7 +372,24 @@ const ops: CMD[] = [
       gl.generateMipmap(type);
       ops[7](
         rt,
-        new Int32Array([cmd[7], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        new Int32Array([
+          cmd[9],
+          cmd[10],
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+        ]),
       );
       URL.revokeObjectURL(url);
     };
@@ -313,7 +415,24 @@ const ops: CMD[] = [
     );
     ops[7](
       rt,
-      new Int32Array([cmd[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+      new Int32Array([
+        cmd[3],
+        cmd[4],
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+      ]),
     );
   },
   async (rt, cmda) => {
