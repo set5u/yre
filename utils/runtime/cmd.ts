@@ -175,7 +175,7 @@ const ops: CMD[] = [
     if (!m) {
       ops[7](
         rt,
-        new Int32Array([cmd[2], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        new Int32Array([cmd[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
       );
       return;
     }
@@ -185,9 +185,10 @@ const ops: CMD[] = [
     const path = m.substring(ci + 1);
     const data = await rt.file[space].read(path);
     if (!data) {
+      gl.bufferData(gl.ARRAY_BUFFER, cmd[2], gl.DYNAMIC_COPY);
       ops[7](
         rt,
-        new Int32Array([cmd[2], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        new Int32Array([cmd[4], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
       );
       return;
     }
@@ -199,7 +200,7 @@ const ops: CMD[] = [
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
     ops[7](
       rt,
-      new Int32Array([cmd[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+      new Int32Array([cmd[5], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
     );
   },
   async (rt, cmd) => {
