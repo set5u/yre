@@ -95,8 +95,11 @@ const load = async () => {
   await file.write(
     "entry",
     stringify({
-      program: "",
-      load: "test:main,",
+      program: "main,",
+      load: "test:main=main,",
+      main: "mainv,mainf",
+      mainv: "void main(){gl_Position=vec4(0.,0.,0.,1.);}",
+      mainf: "precision highp float;void main(){gl_FragColor=vec4(1.,0.,0.,1.);}",
     }),
   );
   const buf = new ArrayBuffer(4 * 16);

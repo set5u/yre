@@ -81,10 +81,11 @@ const draw = (
   method:
     | typeof WebGL2RenderingContext.TRIANGLES
     | typeof WebGL2RenderingContext.POINTS,
+  placeholder?: string,
 ) => {
   const decoded = decode(cmd);
 
-  const prog = rt.prog[rt.key[decoded.sh]];
+  const prog = rt.prog[placeholder || rt.key[decoded.sh]];
   if (!prog) {
     return;
   }
@@ -93,11 +94,29 @@ const draw = (
   gl.useProgram(prog[0]);
   gl.bindTransformFeedback(gl.TRANSFORM_FEEDBACK, prog[1]);
   let i = 0;
+  let cpuNeedsUpdate = false;
   for (const ti of decoded.tex.slice(0, 11)) {
-    gl.bindTexture(gl.TEXTURE_2D, rt.tex[ti - 1] || null);
+    if (ti - 1 === 0) {
+      cpuNeedsUpdate = true;
+    }
+    const t = rt.tex[ti - 1] || [gl.TEXTURE_2D, null];
+    gl.bindTexture(t[0], t[1]);
     gl.activeTexture(gl.TEXTURE0 + i);
     gl.uniform1i(prog[i + 1], i);
     i++;
+  }
+  if (cpuNeedsUpdate) {
+    gl.texSubImage2D(
+      gl.TEXTURE_2D,
+      0,
+      0,
+      0,
+      2048,
+      2048,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      rt.cpu,
+    );
   }
   if (decoded.buf.sep) {
     let i = 0;
@@ -150,14 +169,14 @@ const ops: CMD[] = [
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.disable(gl.RASTERIZER_DISCARD);
   },
-  async (rt, cmd) => {
+  async (rt, cmd, placeholder) => {
     const gl = rt.gl;
-    draw(rt, cmd, gl.POINTS);
+    draw(rt, cmd, gl.POINTS, placeholder);
     gl.disable(gl.RASTERIZER_DISCARD);
   },
-  async (rt, cmd) => {
+  async (rt, cmd, placeholder) => {
     const gl = rt.gl;
-    draw(rt, cmd, gl.TRIANGLES);
+    draw(rt, cmd, gl.TRIANGLES, placeholder);
     gl.disable(gl.RASTERIZER_DISCARD);
   },
   async (rt, cmd) => {
@@ -322,11 +341,11 @@ const utils: CMD[] = [
   () => {},
 ];
 
-export const cmd: CMD = async (rt, cmd) => {
+export const cmd: CMD = async (rt, cmd, placeholder) => {
   const l = cmd.length / 16;
   for (let i = 0; i < l; i++) {
     const op = cmd[i * 16 + 15] & 0x7;
-    await ops[op](rt, cmd.slice(i * 16, i * 16 + 16));
+    await ops[op](rt, cmd.slice(i * 16, i * 16 + 16), placeholder);
   }
 };
 

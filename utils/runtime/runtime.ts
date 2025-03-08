@@ -20,7 +20,11 @@ export type Runtime = {
   num: Record<string, number>;
 };
 
-export type CMD = (rt: Runtime, cmd: Int32Array) => void | Promise<void>;
+export type CMD = (
+  rt: Runtime,
+  cmd: Int32Array,
+  placeholder?: string,
+) => void | Promise<void>;
 
 export const run = async (
   el: HTMLDivElement,
@@ -170,7 +174,7 @@ export const run = async (
           transMode === "sep" ? gl.SEPARATE_ATTRIBS : gl.INTERLEAVED_ATTRIBS,
         );
       }
-      gl.linkProgram(program);
+      gl.linkProgram(prog);
       const progI = gl.getProgramInfoLog(prog);
       if (progI) {
         console.log(progI);
@@ -214,12 +218,15 @@ export const run = async (
       const ci = m.indexOf(":");
       const space = m.substring(0, ci);
       const path = m.substring(ci + 1);
-      const buf = await runtime.file[space]?.read(path);
+      const pi = path.indexOf("=");
+      const finalPath = path.substring(0, pi);
+      const placeholder = path.substring(pi + 1);
+      const buf = await runtime.file[space]?.read(finalPath);
       if (!buf) {
         continue;
       }
       const cmdd = new Int32Array(buf);
-      await cmd(runtime, cmdd);
+      await cmd(runtime, cmdd, placeholder);
     }
   }
   return runtime;
