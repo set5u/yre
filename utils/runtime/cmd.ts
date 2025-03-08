@@ -231,12 +231,12 @@ const ops: CMD[] = [
     if (rt.tex[cmd[0] - 1]) {
       gl.deleteTexture(rt.tex[cmd[0] - 1]);
     }
-    const [, tex] = (rt.tex[cmd[0] - 1] = [cmd[2], gl.createTexture()]);
+    const [type, tex] = (rt.tex[cmd[0] - 1] = [cmd[2], gl.createTexture()]);
     const m = rt.res[rt.key[~cmd[1]]] || null;
     if (!m) {
-      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.bindTexture(type, tex);
       gl.texImage2D(
-        gl.TEXTURE_2D,
+        type,
         0,
         gl.RGBA,
         cmd[3],
@@ -258,9 +258,9 @@ const ops: CMD[] = [
     const path = m.substring(ci + 1);
     const data = await rt.file[space].read(path);
     if (!data) {
-      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.bindTexture(type, tex);
       gl.texImage2D(
-        gl.TEXTURE_2D,
+        type,
         0,
         gl.RGBA,
         cmd[3],
@@ -282,9 +282,9 @@ const ops: CMD[] = [
       if (rt.tex[cmd[0] - 1][1] !== tex) {
         return;
       }
-      gl.bindTexture(gl.TEXTURE_2D, tex);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
-      gl.generateMipmap(gl.TEXTURE_2D);
+      gl.bindTexture(type, tex);
+      gl.texImage2D(type, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+      gl.generateMipmap(type);
       ops[7](
         rt,
         new Int32Array([cmd[7], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
@@ -328,7 +328,7 @@ const ops: CMD[] = [
         gl.framebufferTexture2D(
           gl.FRAMEBUFFER,
           gl.COLOR_ATTACHMENT0,
-          gl.TEXTURE_2D,
+          (rt.tex[~a] || [gl.TEXTURE_2D])[0],
           (rt.tex[~a] || [, null])[1],
           0,
         );
@@ -377,7 +377,6 @@ const utils: CMD[] = [
 
 export const cmd: CMD = async (rt, cmd, placeholder) => {
   const l = cmd.length / 16;
-  console.log(cmd);
   for (let i = 0; i < l; i++) {
     const op = cmd[i * 16 + 15] & 0x7;
     await ops[op](rt, cmd.slice(i * 16, i * 16 + 16), placeholder);

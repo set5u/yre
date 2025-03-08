@@ -89,9 +89,9 @@ const encode = (data: {
 console.log(
   encode({
     buf: { single: 2, buf: [0, 0, 0, 0] },
-    c: 3,
+    c: 2,
     sh: 0,
-    tex: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    tex: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
     tr: [1, 0, 0, 0],
     vert: 1,
   }),
@@ -108,7 +108,7 @@ const load = async () => {
       load: "test:main=main,",
       main: "mainv,mainf,,p0,p1,p2,p3",
       mainv:
-        "#version 300 es\nout vec4 p0;out vec4 p1;out vec4 p2;out vec4 p3;void main(){p0=vec4(intBitsToFloat(1),0.,0.,0.);p1=vec4(0.,0.,0.,0.);p2=vec4(0.,0.,0.,0.);p3=vec4(0.,0.,0.,0.);gl_Position=vec4(0.,0.,0.,1.);}",
+        "#version 300 es\nflat out ivec4 p0;flat out ivec4 p1;flat out ivec4 p2;flat out ivec4 p3;void main(){p0=ivec4(0,1,2,3);p1=ivec4(0,1,2,3);p2=ivec4(0,1,2,3);p3=ivec4(0,1,2,3);gl_Position=vec4(0.,0.,0.,1.);}",
       mainf:
         "#version 300 es\nprecision highp float;out vec4 color;void main(){color=vec4(1.,0.,0.,1.);}",
     }),
@@ -118,7 +118,7 @@ const load = async () => {
   ar.set([1, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4], 0);
   ar.set([2, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4], 16);
   ar.set([1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6], 32);
-  ar.set([2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 65539], 48);
+  ar.set([2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 65538], 48);
   ar.set([1, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7], 64);
   await file.write("main", buf);
   const runtime = await run(divRef.value!, [file], cmd);
