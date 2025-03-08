@@ -81,12 +81,21 @@ const encode = (data: {
   ret[14] |= tex[15];
 
   ret[15] |= data.vert << 16;
-  ret[15] |= data.sh << 8;
+  ret[15] |= data.sh << 3;
   ret[15] |= data.c;
 
   return ret;
 };
-
+console.log(
+  encode({
+    buf: { single: 2, buf: [0, 0, 0, 0] },
+    c: 3,
+    sh: 0,
+    tex: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    tr: [1, 0, 0, 0],
+    vert: 1,
+  }),
+);
 const loaded = ref(false);
 const load = async () => {
   loaded.value = true;
@@ -97,13 +106,20 @@ const load = async () => {
     stringify({
       program: "main,",
       load: "test:main=main,",
-      main: "mainv,mainf",
-      mainv: "void main(){gl_Position=vec4(0.,0.,0.,1.);}",
-      mainf: "precision highp float;void main(){gl_FragColor=vec4(1.,0.,0.,1.);}",
+      main: "mainv,mainf,,p0,p1,p2,p3",
+      mainv:
+        "#version 300 es\nout vec4 p0;out vec4 p1;out vec4 p2;out vec4 p3;void main(){p0=vec4(intBitsToFloat(1),0.,0.,0.);p1=vec4(0.,0.,0.,0.);p2=vec4(0.,0.,0.,0.);p3=vec4(0.,0.,0.,0.);gl_Position=vec4(0.,0.,0.,1.);}",
+      mainf:
+        "#version 300 es\nprecision highp float;out vec4 color;void main(){color=vec4(1.,0.,0.,1.);}",
     }),
   );
-  const buf = new ArrayBuffer(4 * 16);
+  const buf = new ArrayBuffer(4 * 16 * 5);
   const ar = new Int32Array(buf);
+  ar.set([1, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4], 0);
+  ar.set([2, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4], 16);
+  ar.set([1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6], 32);
+  ar.set([2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 65539], 48);
+  ar.set([1, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7], 64);
   await file.write("main", buf);
   const runtime = await run(divRef.value!, [file], cmd);
   console.log(runtime);

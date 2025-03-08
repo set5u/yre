@@ -16,6 +16,7 @@ export type Runtime = {
   rb: WebGLRenderbuffer[];
   key: string[];
   stop: () => void;
+  upCpu: () => void;
   cpu: Uint8Array;
   num: Record<string, number>;
 };
@@ -48,7 +49,7 @@ export const run = async (
     throw "Webgl2 Not Supported";
   }
   el.appendChild(canvas);
-  const runtime: Runtime = {
+  const rt: Runtime = {
     res: {},
     file: {},
     buf: [],
@@ -75,23 +76,39 @@ export const run = async (
       gl.deleteFramebuffer(this.fb);
       observer.disconnect();
     },
+    upCpu() {
+      this.cpu[0] = performance.now();
+      gl.bindTexture(gl.TEXTURE_2D, cpuTex);
+      gl.texSubImage2D(
+        gl.TEXTURE_2D,
+        0,
+        0,
+        0,
+        2048,
+        2048,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        rt.cpu,
+      );
+    },
     cpu: new Uint8Array(2048 * 2048 * 4),
     num: {},
   };
+  const flCpu = new Float32Array(rt.cpu.buffer);
   for (const f of file) {
-    runtime.file[f.name] = f;
+    rt.file[f.name] = f;
   }
   let step = 0;
   let stepMax = file.length;
   for (const f of file) {
-    await init(runtime, f);
+    await init(rt, f);
     await cb?.(0, step++, stepMax);
   }
-  const res = runtime.res;
+  const res = rt.res;
 
   res["space"] = file.map((v) => v.name).reduce((p, c) => `${p}${c},`, "");
   res["define"] = "";
-  res["define"] = (runtime.key = Object.keys(res).concat(
+  res["define"] = (rt.key = Object.keys(res).concat(
     "program" in res
       ? res["program"]
           .replaceAll("\n", "")
@@ -99,7 +116,7 @@ export const run = async (
           .filter((v) => v)
       : [],
   )).reduce((p, c, i) => `${p}const int ${c} = ${~i};\n`, "");
-  runtime.key.forEach((v, i) => (runtime.num[v] = i));
+  rt.key.forEach((v, i) => (rt.num[v] = i));
   await cb?.(1, 0, 1);
 
   if ("font" in res) {
@@ -161,7 +178,7 @@ export const run = async (
       if (fshI) {
         console.log(fshI);
       }
-      runtime.sh.push(vshH, fshH);
+      rt.sh.push(vshH, fshH);
       const prog = gl.createProgram();
       gl.attachShader(prog, vshH);
       gl.attachShader(prog, fshH);
@@ -179,7 +196,7 @@ export const run = async (
       if (progI) {
         console.log(progI);
       }
-      const r = (runtime.prog[p] = [prog, tr]);
+      const r = (rt.prog[p] = [prog, tr]);
       let u: WebGLUniformLocation | null;
       let i = 0;
       while ((u = gl.getUniformLocation(prog, "tex" + i++))) {
@@ -188,7 +205,7 @@ export const run = async (
     }
   }
   const cpuTex = gl.createTexture();
-  runtime.tex.push([gl.TEXTURE_2D, cpuTex]);
+  rt.tex.push([gl.TEXTURE_2D, cpuTex]);
   gl.bindTexture(gl.TEXTURE_2D, cpuTex);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
@@ -203,7 +220,7 @@ export const run = async (
     0,
     gl.RGBA,
     gl.UNSIGNED_BYTE,
-    runtime.cpu,
+    rt.cpu,
   );
   await cb?.(4, 0, 1);
   if ("load" in res) {
@@ -221,15 +238,15 @@ export const run = async (
       const pi = path.indexOf("=");
       const finalPath = path.substring(0, pi);
       const placeholder = path.substring(pi + 1);
-      const buf = await runtime.file[space]?.read(finalPath);
+      const buf = await rt.file[space]?.read(finalPath);
       if (!buf) {
         continue;
       }
       const cmdd = new Int32Array(buf);
-      await cmd(runtime, cmdd, placeholder);
+      await cmd(rt, cmdd, placeholder);
     }
   }
-  return runtime;
+  return rt;
 };
 
 const replaceSh = (sh: string, res: Record<string, string>) => {

@@ -28,10 +28,10 @@ const bindF = (rt: Runtime, decoded: ReturnType<typeof decode>) => {
     gl.FRAMEBUFFER,
     gl.DEPTH_ATTACHMENT,
     gl.RENDERBUFFER,
-    rt.rb,
+    rb,
   );
   gl.bindRenderbuffer(gl.RENDERBUFFER, null);
-  const [tex0i, tex0] = rt.tex[decoded.tex[11] - 1] || null;
+  const [tex0i, tex0] = rt.tex[decoded.tex[11] - 1] || [gl.TEXTURE_2D, null];
   gl.bindTexture(tex0i, tex0);
   gl.framebufferTexture2D(
     gl.FRAMEBUFFER,
@@ -40,7 +40,7 @@ const bindF = (rt: Runtime, decoded: ReturnType<typeof decode>) => {
     tex0,
     0,
   );
-  const [tex1i, tex1] = rt.tex[decoded.tex[12] - 1] || null;
+  const [tex1i, tex1] = rt.tex[decoded.tex[12] - 1] || [gl.TEXTURE_2D, null];
   gl.bindTexture(tex1i, tex1);
   gl.framebufferTexture2D(
     gl.FRAMEBUFFER,
@@ -49,7 +49,7 @@ const bindF = (rt: Runtime, decoded: ReturnType<typeof decode>) => {
     tex1,
     0,
   );
-  const [tex2i, tex2] = rt.tex[decoded.tex[13] - 1] || null;
+  const [tex2i, tex2] = rt.tex[decoded.tex[13] - 1] || [gl.TEXTURE_2D, null];
   gl.bindTexture(tex2i, tex2);
   gl.framebufferTexture2D(
     gl.FRAMEBUFFER,
@@ -58,7 +58,7 @@ const bindF = (rt: Runtime, decoded: ReturnType<typeof decode>) => {
     tex2,
     0,
   );
-  const [tex3i, tex3] = rt.tex[decoded.tex[14] - 1] || null;
+  const [tex3i, tex3] = rt.tex[decoded.tex[14] - 1] || [gl.TEXTURE_2D, null];
   gl.bindTexture(tex3i, tex3);
   gl.framebufferTexture2D(
     gl.FRAMEBUFFER,
@@ -96,27 +96,20 @@ const draw = (
   let i = 0;
   let cpuNeedsUpdate = false;
   for (const ti of decoded.tex.slice(0, 11)) {
+    if (!prog[i + 1]) {
+      break;
+    }
     if (ti - 1 === 0) {
       cpuNeedsUpdate = true;
     }
     const t = rt.tex[ti - 1] || [gl.TEXTURE_2D, null];
     gl.bindTexture(t[0], t[1]);
     gl.activeTexture(gl.TEXTURE0 + i);
-    gl.uniform1i(prog[i + 1], i);
+    gl.uniform1i(prog[i + 2], i);
     i++;
   }
   if (cpuNeedsUpdate) {
-    gl.texSubImage2D(
-      gl.TEXTURE_2D,
-      0,
-      0,
-      0,
-      2048,
-      2048,
-      gl.RGBA,
-      gl.UNSIGNED_BYTE,
-      rt.cpu,
-    );
+    rt.upCpu();
   }
   if (decoded.buf.sep) {
     let i = 0;
@@ -156,6 +149,7 @@ const draw = (
   gl.beginTransformFeedback(method);
   gl.drawArrays(method, 0, decoded.vert);
   gl.endTransformFeedback();
+  gl.bindTransformFeedback(gl.TRANSFORM_FEEDBACK, null);
 };
 
 const ops: CMD[] = [
@@ -192,7 +186,9 @@ const ops: CMD[] = [
     const buf = (rt.buf[cmd[0] - 1] = gl.createBuffer());
     const m = rt.res[rt.key[~cmd[1]]] || null;
     if (!m) {
-      gl.bufferData(gl.ARRAY_BUFFER, cmd[2], gl.DYNAMIC_COPY);
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, cmd[2] * 4, gl.DYNAMIC_COPY);
+      gl.bindBuffer(gl.ARRAY_BUFFER, null);
       ops[7](
         rt,
         new Int32Array([cmd[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
@@ -205,7 +201,9 @@ const ops: CMD[] = [
     const path = m.substring(ci + 1);
     const data = await rt.file[space].read(path);
     if (!data) {
-      gl.bufferData(gl.ARRAY_BUFFER, cmd[2], gl.DYNAMIC_COPY);
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, cmd[2] * 4, gl.DYNAMIC_COPY);
+      gl.bindBuffer(gl.ARRAY_BUFFER, null);
       ops[7](
         rt,
         new Int32Array([cmd[4], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
@@ -236,9 +234,21 @@ const ops: CMD[] = [
     const [, tex] = (rt.tex[cmd[0] - 1] = [cmd[2], gl.createTexture()]);
     const m = rt.res[rt.key[~cmd[1]]] || null;
     if (!m) {
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        gl.RGBA,
+        cmd[3],
+        cmd[4],
+        0,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        null,
+      );
       ops[7](
         rt,
-        new Int32Array([cmd[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        new Int32Array([cmd[5], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
       );
       return;
     }
@@ -248,9 +258,21 @@ const ops: CMD[] = [
     const path = m.substring(ci + 1);
     const data = await rt.file[space].read(path);
     if (!data) {
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        gl.RGBA,
+        cmd[3],
+        cmd[4],
+        0,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        null,
+      );
       ops[7](
         rt,
-        new Int32Array([cmd[4], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        new Int32Array([cmd[6], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
       );
       return;
     }
@@ -265,7 +287,7 @@ const ops: CMD[] = [
       gl.generateMipmap(gl.TEXTURE_2D);
       ops[7](
         rt,
-        new Int32Array([cmd[5], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        new Int32Array([cmd[7], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
       );
       URL.revokeObjectURL(url);
     };
@@ -297,7 +319,7 @@ const ops: CMD[] = [
   async (rt, cmda) => {
     const gl = rt.gl;
     const ars: Int32Array[] = [];
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 4; i++) {
       const a = cmda[i * 2];
       const l = cmda[i * 2 + 1];
       const buf = new ArrayBuffer(l * 4);
@@ -307,32 +329,44 @@ const ops: CMD[] = [
           gl.FRAMEBUFFER,
           gl.COLOR_ATTACHMENT0,
           gl.TEXTURE_2D,
-          rt.tex[~a] || null,
+          (rt.tex[~a] || [, null])[1],
           0,
         );
-
-        gl.readPixels(
-          0,
-          0,
-          Math.sqrt(l),
-          Math.sqrt(l),
-          gl.RGBA,
-          gl.UNSIGNED_BYTE,
-          new Uint8Array(buf),
-        );
+        const texa = rt.tex[~a] || null;
+        if (texa) {
+          gl.readPixels(
+            0,
+            0,
+            Math.sqrt(l),
+            Math.sqrt(l),
+            gl.RGBA,
+            gl.UNSIGNED_BYTE,
+            new Uint8Array(buf),
+          );
+        }
       } else {
-        gl.bindBuffer(gl.ARRAY_BUFFER, rt.buf[a - 1] || null);
-        gl.getBufferSubData(gl.ARRAY_BUFFER, 0, new Float32Array(buf));
+        const bufa = rt.buf[a - 1] || null;
+        if (bufa) {
+          gl.bindBuffer(gl.ARRAY_BUFFER, bufa);
+          gl.getBufferSubData(gl.ARRAY_BUFFER, 0, new Float32Array(buf));
+        }
       }
       ars.push(new Int32Array(buf));
     }
     const ret = new Int32Array(ars.reduce((p, v) => v.length + p, 0));
+    if (!ret.length) {
+      return;
+    }
     let o = 0;
     for (const r of ars) {
       ret.set(r, o);
       o += r.length;
     }
-    cmd(rt, ret);
+    if (cmda[8]) {
+      requestAnimationFrame(() => cmd(rt, ret));
+    } else {
+      cmd(rt, ret);
+    }
   },
 ];
 
@@ -343,6 +377,7 @@ const utils: CMD[] = [
 
 export const cmd: CMD = async (rt, cmd, placeholder) => {
   const l = cmd.length / 16;
+  console.log(cmd);
   for (let i = 0; i < l; i++) {
     const op = cmd[i * 16 + 15] & 0x7;
     await ops[op](rt, cmd.slice(i * 16, i * 16 + 16), placeholder);
