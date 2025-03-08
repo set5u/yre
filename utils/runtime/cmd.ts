@@ -173,6 +173,7 @@ const ops: CMD[] = [
     const buf = (rt.buf[cmd[0] - 1] = gl.createBuffer());
     const m = rt.res[rt.key[~cmd[1]]] || null;
     if (!m) {
+      gl.bufferData(gl.ARRAY_BUFFER, cmd[2], gl.DYNAMIC_COPY);
       ops[7](
         rt,
         new Int32Array([cmd[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
