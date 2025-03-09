@@ -184,7 +184,7 @@ const ops: CMD[] = [
       gl.deleteBuffer(rt.buf[cmd[0] - 1]);
     }
     const buf = (rt.buf[cmd[0] - 1] = gl.createBuffer());
-    const m = rt.res[rt.key[~cmd[1]]] || null;
+    const m = rt.res[rt.key[cmd[1] - 1]] || null;
     if (!m) {
       gl.bindBuffer(gl.ARRAY_BUFFER, buf);
       gl.bufferData(gl.ARRAY_BUFFER, cmd[2] * 4, gl.DYNAMIC_COPY);
@@ -283,7 +283,7 @@ const ops: CMD[] = [
       gl.deleteTexture(rt.tex[cmd[0] - 1]);
     }
     const [type, tex] = (rt.tex[cmd[0] - 1] = [cmd[2], gl.createTexture()]);
-    const m = rt.res[rt.key[~cmd[1]]] || null;
+    const m = rt.res[rt.key[cmd[1] - 1]] || null;
     if (!m) {
       gl.bindTexture(type, tex);
       gl.texImage2D(

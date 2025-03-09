@@ -79,6 +79,8 @@ export const run = async (
     },
     upCpu() {
       this.cpu[0] = performance.now();
+      this.cpu[1] = canvas.width;
+      this.cpu[2] = canvas.height;
       gl.bindTexture(gl.TEXTURE_2D, cpuTex);
       gl.texSubImage2D(
         gl.TEXTURE_2D,
@@ -109,14 +111,18 @@ export const run = async (
 
   res["space"] = file.map((v) => v.name).reduce((p, c) => `${p}${c},`, "");
   res["define"] = "";
-  res["define"] = (rt.key = Object.keys(res).concat(
-    "program" in res
-      ? res["program"]
-          .replaceAll("\n", "")
-          .split(",")
-          .filter((v) => v)
-      : [],
-  )).reduce((p, c, i) => `${p}const int ${c} = ${~i};\n`, "");
+  res["define"] = (rt.key = Array.from(
+    new Set(
+      Object.keys(res).concat(
+        "program" in res
+          ? res["program"]
+              .replaceAll("\n", "")
+              .split(",")
+              .filter((v) => v)
+          : [],
+      ),
+    ),
+  )).reduce((p, c, i) => `${p}const int ${c} = ${i + 1};\n`, "");
   rt.key.forEach((v, i) => (rt.num[v] = i));
   await cb?.(1, 0, 1);
 
