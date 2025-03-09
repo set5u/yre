@@ -107,10 +107,28 @@ const load = async () => {
       program: "main,",
       load: "test:main=main,",
       main: "mainv,mainf,,p0,p1,p2,p3",
-      mainv:
-        "#version 300 es\nflat out ivec4 p0;flat out ivec4 p1;flat out ivec4 p2;flat out ivec4 p3;void main(){p0=ivec4(0,0,0,0);p1=ivec4(0,0,0,0);p2=ivec4(0,0,0,0);p3=ivec4(0,0,0,0);gl_Position=vec4(0.,0.,0.,1.);}",
-      mainf:
-        "#version 300 es\nprecision highp float;out vec4 color;void main(){color=vec4(1.,0.,0.,1.);}",
+      mainv: `#version 300 es
+flat out ivec4 p0;
+flat out ivec4 p1;
+flat out ivec4 p2;
+flat out ivec4 p3;
+const int a[16] = int[](
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+);
+void main(){
+  int o = gl_VertexID*16;
+  p0=ivec4(a[o+0],a[o+1],a[o+2],a[o+3]);
+  p1=ivec4(a[o+4],a[o+5],a[o+6],a[o+7]);
+  p2=ivec4(a[o+8],a[o+9],a[o+10],a[o+11]);
+  p3=ivec4(a[o+12],a[o+13],a[o+14],a[o+15]);
+  gl_Position=vec4(0.,0.,0.,1.);
+}`,
+      mainf: `#version 300 es
+precision highp float;
+out vec4 color;
+void main(){
+  color=vec4(1.,0.,0.,1.);
+}`,
     }),
   );
   const buf = new ArrayBuffer(4 * 16 * 5);

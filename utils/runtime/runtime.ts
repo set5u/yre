@@ -78,7 +78,7 @@ export const run = async (
       el.removeChild(canvas);
     },
     upCpu() {
-      this.cpu[0] = performance.now();
+      this.cpu[0] = performance.now() % (1024 * 1024);
       this.cpu[1] = canvas.width;
       this.cpu[2] = canvas.height;
       gl.bindTexture(gl.TEXTURE_2D, cpuTex);
