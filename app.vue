@@ -104,14 +104,15 @@ const load = async () => {
   await file.write(
     "entry",
     stringify({
-      program: "main,",
-      load: "test:main=main,",
-      main: "mainv,mainf,,p0,p1,p2,p3",
+      program: "mainn,",
+      load: "test:mainu=mainn,",
+      mainn: "mainv,mainf,,p0,p1,p2,p3",
       mainv: `#version 300 es
 flat out ivec4 p0;
 flat out ivec4 p1;
 flat out ivec4 p2;
 flat out ivec4 p3;
+%%define%%
 const int a[16] = int[](
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 );
@@ -134,11 +135,11 @@ void main(){
   const buf = new ArrayBuffer(4 * 16 * 5);
   const ar = new Int32Array(buf);
   ar.set([1, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4], 0);
-  ar.set([2, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4], 16);
+  ar.set([2, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4], 16);
   ar.set([1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6], 32);
   ar.set([2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 65538], 48);
   ar.set([1, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7], 64);
-  await file.write("main", buf);
+  await file.write("mainu", buf);
   const runtime = await run(divRef.value!, [file], cmd);
   console.log(runtime);
 };
