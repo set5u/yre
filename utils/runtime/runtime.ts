@@ -34,6 +34,10 @@ export const run = async (
   cb?: (fase: number, step: number, stepMax: number) => Promise<void>,
 ) => {
   const canvas = document.createElement("canvas");
+  const gl = canvas.getContext("webgl2");
+  if (!gl) {
+    throw "Webgl2 Not Supported";
+  }
   canvas.style.position = "absolute";
   canvas.style.width = "100%";
   canvas.style.height = "100%";
@@ -44,10 +48,7 @@ export const run = async (
   const observer = new ResizeObserver(onResize);
   observer.observe(el);
   onResize();
-  const gl = canvas.getContext("webgl2");
-  if (!gl) {
-    throw "Webgl2 Not Supported";
-  }
+
   el.appendChild(canvas);
   const rt: Runtime = {
     res: {},

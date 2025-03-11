@@ -104,10 +104,10 @@ const load = async () => {
   await file.write(
     "entry",
     stringify({
-      program: "mainn,",
-      load: "test:mainu=mainn,",
-      mainn: "mainv,mainf,,p0,p1,p2,p3",
-      mainv: `#version 300 es
+      program: "nmain,",
+      load: "test:umain=nmain,",
+      nmain: "vmain,fmain,,p0,p1,p2,p3",
+      vmain: `#version 300 es
 flat out ivec4 p0;
 flat out ivec4 p1;
 flat out ivec4 p2;
@@ -122,13 +122,14 @@ void main(){
   p1=ivec4(a[o+4],a[o+5],a[o+6],a[o+7]);
   p2=ivec4(a[o+8],a[o+9],a[o+10],a[o+11]);
   p3=ivec4(a[o+12],a[o+13],a[o+14],a[o+15]);
+  gl_PointSize=1.;
   gl_Position=vec4(0.,0.,0.,1.);
 }`,
-      mainf: `#version 300 es
+      fmain: `#version 300 es
 precision highp float;
 out vec4 color;
 void main(){
-  color=vec4(1.,0.,0.,1.);
+  color=vec4(0.,0.,0.,1.);
 }`,
     }),
   );
@@ -137,9 +138,19 @@ void main(){
   ar.set([1, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4], 0);
   ar.set([2, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4], 16);
   ar.set([1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6], 32);
-  ar.set([2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 65538], 48);
+  ar.set(
+    encode({
+      buf: { single: 2, buf: [0, 0, 0, 0] },
+      c: 2,
+      sh: 0,
+      tex: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+      tr: [1, 0, 0, 0],
+      vert: 1,
+    }),
+    48,
+  );
   ar.set([1, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7], 64);
-  await file.write("mainu", buf);
+  await file.write("umain", buf);
   const runtime = await run(divRef.value!, [file], cmd);
   console.log(runtime);
 };
